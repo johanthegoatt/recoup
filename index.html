@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recoup - don't miss a return window</title>
+<meta name="description" content="Keep track of the last day you can take things back. Recoup works out each return window, counts down the days, and knows the rights the law gives you on top of the shop's policy.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M58 20 L30 48 L58 76' fill='none' stroke='%235568e8' stroke-width='12' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M34 48 H68 a14 14 0 0 1 14 14' fill='none' stroke='%235568e8' stroke-width='12' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#add">Skip to adding an item</a>
+
+<header class="top">
+  <div class="brand">
+    <span class="logo" aria-hidden="true">
+      <svg viewBox="0 0 100 100" width="34" height="34"><path d="M58 22 L32 48 L58 74" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/><path d="M36 48 H66 a15 15 0 0 1 15 15 V70" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="round"/></svg>
+    </span>
+    <h1>Recoup</h1>
+  </div>
+  <p class="tag">Don't miss a return window.</p>
+</header>
+
+<main>
+  <section class="card" id="add" aria-labelledby="add-h">
+    <h2 id="add-h">Add something you bought</h2>
+    <form id="form" autocomplete="off">
+      <div class="row">
+        <label class="field grow">
+          <span>What is it?</span>
+          <input id="name" type="text" maxlength="50" placeholder="e.g. running shoes" required>
+        </label>
+        <label class="field grow">
+          <span>Shop (optional)</span>
+          <input id="shop" type="text" maxlength="40" placeholder="e.g. SportsDirect">
+        </label>
+      </div>
+
+      <div class="row">
+        <label class="field grow">
+          <span>Bought on</span>
+          <input id="date" type="date" required>
+        </label>
+        <label class="field grow">
+          <span>Where are you?</span>
+          <select id="region">
+            <option value="US">United States</option>
+            <option value="UK">United Kingdom</option>
+            <option value="EU">European Union</option>
+          </select>
+        </label>
+      </div>
+
+      <fieldset class="seg" id="kind-wrap">
+        <legend>Why might you take it back?</legend>
+        <label class="pick"><input type="radio" name="kind" value="change" checked><span>Changed my mind</span></label>
+        <label class="pick"><input type="radio" name="kind" value="faulty"><span>It's faulty</span></label>
+      </fieldset>
+
+      <div class="field" id="window-wrap">
+        <span>How long does the shop give you? (days)</span>
+        <div class="chips" id="chips" role="group" aria-label="Return window in days"></div>
+        <input id="window" type="number" min="0" max="730" inputmode="numeric" placeholder="or type the days from your receipt">
+      </div>
+
+      <label class="check" id="online-wrap">
+        <input id="online" type="checkbox">
+        <span>Bought online or by phone</span>
+      </label>
+
+      <div class="actions">
+        <button type="submit" class="primary">Add to the list</button>
+        <button type="button" id="example" class="ghost">Try an example</button>
+      </div>
+      <p class="keeps" id="keeps" aria-live="polite"></p>
+    </form>
+  </section>
+
+  <section class="card" aria-labelledby="list-h">
+    <div class="list-head">
+      <h2 id="list-h">Take these back first</h2>
+      <p class="count" id="count" aria-live="polite"></p>
+    </div>
+
+    <div class="filters" id="filters" role="group" aria-label="Show">
+      <button type="button" data-view="all" class="on">All</button>
+      <button type="button" data-view="soon">Closing soon</button>
+      <button type="button" data-view="open">Open</button>
+      <button type="button" data-view="closed">Closed</button>
+    </div>
+
+    <ul class="list" id="list"></ul>
+
+    <div class="empty" id="empty">
+      <p>Nothing on the list yet. Add something you bought and I'll keep an eye on the last day to take it back.</p>
+    </div>
+
+    <div class="list-foot" id="list-foot">
+      <button type="button" id="clear-closed" class="ghost small hidden">Clear the closed ones</button>
+    </div>
+  </section>
+
+  <details class="note">
+    <summary>What the windows are, and your rights</summary>
+    <p>The quick-pick days are typical shop policies, not the law: a Salesforce review of 350 retailers put the average return window at 30 days in the US and 14 in Europe, and most UK shops sit at 28 to 30 days. Always use the number on your own receipt when you have it.</p>
+    <p>On top of any shop policy, the law gives you return rights that a short window can't take away:</p>
+    <ul>
+      <li><strong>UK, faulty:</strong> the Consumer Rights Act 2015 gives a 30-day short-term right to reject a faulty item for a full refund.</li>
+      <li><strong>UK and EU, bought online:</strong> you get at least 14 days to change your mind and cancel most online or distance orders, under the Consumer Contracts Regulations 2013 (UK) and the Consumer Rights Directive (EU).</li>
+      <li><strong>US:</strong> there's no federal right to return, so change-of-mind and faulty returns follow the shop's own policy.</li>
+    </ul>
+    <p>Recoup uses the longer of the shop's window and your legal right. It's a guide, not legal advice. Nothing you type leaves your device.</p>
+  </details>
+</main>
+
+<footer class="foot">
+  <p>Made by <a href="https://johanthegoat.xyz">Johan</a>. <a href="https://github.com/johanthegoatt/recoup">Code</a>.</p>
+</footer>
+
+<!-- Fetch, the dog who keeps an eye on your return dates -->
+<div class="fetch-dock" id="fetch-dock">
+  <p class="fetch-bubble" id="fetch-bubble" role="status" aria-live="polite"></p>
+  <button class="fetch" id="fetch" type="button" data-mood="sleepy" aria-label="Fetch the dog. Tap for a tip.">
+    <svg viewBox="0 0 120 150" width="84" height="104" aria-hidden="true">
+      <path class="f-ear" d="M28 44 C14 40 12 70 26 86 L44 60 Z"/>
+      <path class="f-ear" d="M92 44 C106 40 108 70 94 86 L76 60 Z"/>
+      <ellipse class="f-head" cx="60" cy="74" rx="40" ry="38"/>
+      <ellipse class="f-snout" cx="60" cy="92" rx="22" ry="18"/>
+      <g class="f-face">
+        <ellipse class="f-eye" cx="46" cy="66" rx="8" ry="9"/>
+        <ellipse class="f-eye" cx="74" cy="66" rx="8" ry="9"/>
+        <circle class="f-pupil" cx="46" cy="68" r="3.4"/>
+        <circle class="f-pupil" cx="74" cy="68" r="3.4"/>
+        <ellipse class="f-nose" cx="60" cy="84" rx="7" ry="5"/>
+        <path class="f-mouth" d="M60 89 V96 M60 96 q-9 7 -17 1 M60 96 q9 7 17 1"/>
+        <path class="f-brow f-brow-l" d="M38 55 q8 -4 16 0"/>
+        <path class="f-brow f-brow-r" d="M66 55 q8 -4 16 0"/>
+      </g>
+    </svg>
+  </button>
+  <button class="fetch-hide" id="fetch-hide" type="button" aria-label="Tuck Fetch away">tuck</button>
+</div>
+
+<script src="src/engine.js"></script>
+<script src="src/fetch.js"></script>
+<script src="src/app.js"></script>
+</body>
+</html>
