@@ -1,0 +1,108 @@
+"use strict";
+var test = require("node:test");
+var assert = require("node:assert");
+var R = require("../src/engine.js");
+
+var DAY = R.DAY;
+// A fixed "now" so the tests never depend on the real clock.
+var NOW = new Date("2026-06-15T09:00:00").getTime();
+
+function daysAgo(n) {
+  return new Date("2026-06-15T09:00:00").getTime() - n * DAY;
+}
+
+test("effective days is the shop window when no legal floor beats it", function () {
+  var item = { region: "US", kind: "change", windowDays: 30, boughtAt: daysAgo(0) };
+  assert.strictEqual(R.effectiveDays(item), 30);
+  assert.strictEqual(R.rightsWin(item), false);
+});
+
+test("UK online change of mind gets at least the 14-day cooling-off right", function () {
+  // Shop offers only 7 days, but the law gives 14 on an online order.
+  var item = { region: "UK", kind: "change", online: true, windowDays: 7, boughtAt: daysAgo(0) };
+  assert.strictEqual(R.effectiveDays(item), 14);
+  assert.strictEqual(R.rightsWin(item), true);
+});
+
+test("a longer shop window beats the legal floor", function () {
+  var item = { region: "UK", kind: "change", online: true, windowDays: 30, boughtAt: daysAgo(0) };
+  assert.strictEqual(R.effectiveDays(item), 30);
+  assert.strictEqual(R.rightsWin(item), false);
+});
+
+test("UK faulty goods get the 30-day right to reject even with no shop window", function () {
+  var item = { region: "UK", kind: "faulty", boughtAt: daysAgo(0) };
+  assert.strictEqual(R.effectiveDays(item), 30);
+  assert.strictEqual(R.rightsWin(item), true);
+});
+
+test("US has no legal floor, so a change of mind needs a shop window", function () {
+  var item = { region: "US", kind: "change", online: true, boughtAt: daysAgo(0) };
+  assert.strictEqual(R.rightsFloor(item), 0);
+  assert.strictEqual(R.effectiveDays(item), null);
+  assert.strictEqual(R.lastDay(item), null);
+  assert.strictEqual(R.phrase(item, NOW), "No return date yet");
+});
+
+test("cooling-off only applies online, not to an in-store change of mind", function () {
+  var item = { region: "UK", kind: "change", online: false, windowDays: 7, boughtAt: daysAgo(0) };
+  assert.strictEqual(R.effectiveDays(item), 7);
+});
+
+test("last day and days left count whole days from the purchase day", function () {
+  var item = { region: "US", kind: "change", windowDays: 30, boughtAt: daysAgo(10) };
+  assert.strictEqual(R.daysLeft(item, NOW), 20);
+  assert.strictEqual(R.phrase(item, NOW), "20 days left");
+});
+
+test("the day the window closes reads as the last day today", function () {
+  var item = { region: "US", kind: "change", windowDays: 30, boughtAt: daysAgo(30) };
+  assert.strictEqual(R.daysLeft(item, NOW), 0);
+  assert.strictEqual(R.phrase(item, NOW), "Last day is today");
+  assert.strictEqual(R.bucket(item, NOW), "now");
+});
+
+test("a passed window is closed and says how long ago", function () {
+  var item = { region: "US", kind: "change", windowDays: 30, boughtAt: daysAgo(33) };
+  assert.strictEqual(R.daysLeft(item, NOW), -3);
+  assert.strictEqual(R.bucket(item, NOW), "closed");
+  assert.strictEqual(R.phrase(item, NOW), "Closed 3 days ago");
+});
+
+test("buckets split now, soon and open", function () {
+  var now = { region: "US", windowDays: 30, boughtAt: daysAgo(28) };   // 2 left
+  var soon = { region: "US", windowDays: 30, boughtAt: daysAgo(25) };  // 5 left
+  var open = { region: "US", windowDays: 30, boughtAt: daysAgo(10) };  // 20 left
+  assert.strictEqual(R.bucket(now, NOW), "now");
+  assert.strictEqual(R.bucket(soon, NOW), "soon");
+  assert.strictEqual(R.bucket(open, NOW), "open");
+});
+
+test("rank puts closed first, then soonest, undated last", function () {
+  var items = [
+    { id: "open", region: "US", windowDays: 90, boughtAt: daysAgo(10) },  // 80 left
+    { id: "closed", region: "US", windowDays: 14, boughtAt: daysAgo(20) }, // -6
+    { id: "undated", region: "US", kind: "change", boughtAt: daysAgo(1) },
+    { id: "now", region: "US", windowDays: 30, boughtAt: daysAgo(29) }     // 1 left
+  ];
+  var order = R.rank(items, NOW).map(function (i) { return i.id; });
+  assert.deepStrictEqual(order, ["closed", "now", "open", "undated"]);
+});
+
+test("summary counts close and closed windows", function () {
+  var items = [
+    { region: "US", windowDays: 30, boughtAt: daysAgo(29) }, // 1 left  -> soon count
+    { region: "US", windowDays: 30, boughtAt: daysAgo(25) }, // 5 left  -> soon count
+    { region: "US", windowDays: 30, boughtAt: daysAgo(40) }, // closed
+    { region: "US", windowDays: 90, boughtAt: daysAgo(1) }   // plenty
+  ];
+  var s = R.summary(items, NOW);
+  assert.strictEqual(s.total, 4);
+  assert.strictEqual(s.soon, 2);
+  assert.strictEqual(s.closed, 1);
+});
+
+test("an unknown region falls back to US rules", function () {
+  var item = { region: "ZZ", kind: "faulty", boughtAt: daysAgo(0) };
+  assert.strictEqual(R.rightsFloor(item), 0);
+});

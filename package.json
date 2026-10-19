@@ -1,0 +1,10 @@
+{
+  "name": "recoup",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Don't miss a return window. Recoup tracks the last day you can take things back, counts down the days, and knows the rights the law gives you on top of the shop's policy. With Fetch the dog.",
+  "scripts": {
+    "test": "node --test"
+  },
+  "license": "MIT"
+}
