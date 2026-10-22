@@ -13,6 +13,7 @@
   var regionEl = document.getElementById("region");
   var windowEl = document.getElementById("window");
   var onlineEl = document.getElementById("online");
+  var holidayEl = document.getElementById("holiday");
   var chipsEl = document.getElementById("chips");
   var keepsEl = document.getElementById("keeps");
   var exampleBtn = document.getElementById("example");
@@ -75,8 +76,21 @@
       region: regionEl.value,
       kind: kind(),
       windowDays: windowDays(),
-      online: !!onlineEl.checked
+      online: !!onlineEl.checked,
+      holiday: holidayEl && holidayEl.value ? holidayEl.value : null
     };
+  }
+
+  // Fill the holiday-shop dropdown from the engine's table.
+  function buildHoliday() {
+    if (!holidayEl) return;
+    Object.keys(R.holiday).forEach(function (key) {
+      var o = document.createElement("option");
+      o.value = key;
+      o.textContent = R.holiday[key].label;
+      holidayEl.appendChild(o);
+    });
+    holidayEl.addEventListener("change", preview);
   }
 
   // ---- the quick-pick day chips ----
@@ -107,15 +121,16 @@
   function preview() {
     var it = draft();
     if (it.boughtAt == null) { keepsEl.textContent = ""; return; }
-    var days = R.effectiveDays(it);
-    if (days == null) {
+    var by = R.lastDay(it);
+    if (by == null) {
       keepsEl.innerHTML = "Pick how long the shop gives you, or your legal right will set it.";
       return;
     }
-    var by = R.lastDay(it);
-    var left = R.daysLeft(it);
     var txt = "Last day to take it back: <strong>" + fmtDate(by) + "</strong> (" + R.phrase(it) + ").";
-    if (R.rightsWin(it)) {
+    if (R.holidayWins(it)) {
+      var note = R.holiday[it.holiday] && R.holiday[it.holiday].note;
+      txt += ' <span class="right">' + R.holiday[it.holiday].label + "'s holiday window gives you until then." + (note ? " " + note : "") + "</span>";
+    } else if (R.rightsWin(it)) {
       txt += ' <span class="right">That\'s your legal right, longer than the shop\'s window.</span>';
     }
     keepsEl.innerHTML = txt;
@@ -226,7 +241,8 @@
     if (it.shop) parts.push(it.shop);
     parts.push(it.kind === "faulty" ? "faulty" : "change of mind");
     if (it.boughtAt != null) parts.push("bought " + fmtShort(it.boughtAt));
-    if (R.rightsWin(it)) parts.push("legal right");
+    if (R.holidayWins(it)) parts.push("holiday window");
+    else if (R.rightsWin(it)) parts.push("legal right");
     return parts.join(" · ");
   }
   function fmtShort(ms) {
@@ -366,6 +382,7 @@
 
   // ---- start ----
   buildChips();
+  buildHoliday();
   dateEl.value = todayStr();
   dateEl.max = todayStr();
   render();
