@@ -106,3 +106,44 @@ test("an unknown region falls back to US rules", function () {
   var item = { region: "ZZ", kind: "faulty", boughtAt: daysAgo(0) };
   assert.strictEqual(R.rightsFloor(item), 0);
 });
+
+// Extended holiday return windows.
+test("a November gift at a holiday shop is returnable into the new year", function () {
+  // Bought 20 Nov 2025 at Amazon (14-day shop window), holiday deadline 31 Jan 2026.
+  var nov = new Date("2025-11-20T10:00:00").getTime();
+  var item = { region: "US", kind: "change", windowDays: 14, boughtAt: nov, holiday: "amazon" };
+  var by = R.lastDay(item);
+  var d = new Date(by);
+  assert.strictEqual(d.getFullYear(), 2026);
+  assert.strictEqual(d.getMonth(), 0); // January
+  assert.strictEqual(d.getDate(), 31);
+  assert.strictEqual(R.holidayWins(item), true);
+});
+
+test("the holiday window only applies inside the shop's dates", function () {
+  var sep = new Date("2025-09-15T10:00:00").getTime(); // before Amazon's 1 Nov start
+  var item = { region: "US", kind: "change", windowDays: 30, boughtAt: sep, holiday: "amazon" };
+  assert.strictEqual(R.holidayDeadline(item), null);
+  assert.strictEqual(R.holidayWins(item), false);
+  // Falls back to the ordinary 30-day window.
+  assert.strictEqual(R.lastDay(item), R.startOfDay(sep) + 30 * DAY);
+});
+
+test("the later of the shop window and the holiday deadline wins", function () {
+  // Bought 28 Dec 2025 at Walmart with a long 90-day shop window.
+  var dec = new Date("2025-12-28T10:00:00").getTime();
+  var item = { region: "US", kind: "change", windowDays: 90, boughtAt: dec, holiday: "walmart" };
+  var normal = R.startOfDay(dec) + 90 * DAY;     // ~ 28 Mar 2026
+  var holiday = R.holidayDeadline(item);         // 31 Jan 2026
+  assert.ok(normal > holiday);
+  assert.strictEqual(R.lastDay(item), normal);   // the longer window is kept
+  assert.strictEqual(R.holidayWins(item), false);
+});
+
+test("Best Buy's shorter holiday deadline is honoured", function () {
+  var dec = new Date("2025-12-10T10:00:00").getTime();
+  var item = { region: "US", kind: "change", windowDays: 15, boughtAt: dec, holiday: "bestbuy" };
+  var d = new Date(R.holidayDeadline(item));
+  assert.strictEqual(d.getDate(), 15);
+  assert.strictEqual(d.getMonth(), 0);
+});
