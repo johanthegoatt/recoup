@@ -43,6 +43,19 @@
     US: { coolingOff: 0, rejectFaulty: 0, label: "US" }
   };
 
+  // Extended holiday return windows. Big shops stretch the clock for things
+  // bought in the run-up to the holidays, so a gift bought in November can go
+  // back well into the new year. Each entry is the shop's published 2025 policy:
+  // the dates it covers (month, day) and the day returns are due by, in the
+  // January after. Figures from each retailer's 2025 holiday return notice.
+  var HOLIDAY = {
+    amazon:  { label: "Amazon",   from: [11, 1],  to: [12, 31], by: [1, 31], note: "Apple-brand items are due by 15 January." },
+    walmart: { label: "Walmart",  from: [10, 1],  to: [12, 31], by: [1, 31], note: "" },
+    macys:   { label: "Macy's",   from: [10, 6],  to: [12, 31], by: [1, 31], note: "" },
+    target:  { label: "Target",   from: [11, 1],  to: [12, 24], by: [1, 24], note: "Phones and Apple items get 14 days, due by 9 January." },
+    bestbuy: { label: "Best Buy", from: [10, 31], to: [12, 31], by: [1, 15], note: "Third-party Marketplace items are not included." }
+  };
+
   function startOfDay(d) {
     var x = new Date(d);
     x.setHours(0, 0, 0, 0);
@@ -91,12 +104,38 @@
     return shop == null || floor > shop;
   }
 
-  // The last day you can still take it back: the day you got it plus the days
-  // you have. Returns a midnight stamp, or null if there's no window at all.
+  // The extended holiday deadline for this item, or null. Only applies when the
+  // shop is one with a holiday policy and the purchase date falls inside the
+  // dates that policy covers. Returns a midnight stamp in the following January.
+  function holidayDeadline(item) {
+    var h = item && item.holiday && HOLIDAY[item.holiday];
+    if (!h || item.boughtAt == null) return null;
+    var d = new Date(item.boughtAt);
+    var md = (d.getMonth() + 1) * 100 + d.getDate();
+    if (md < h.from[0] * 100 + h.from[1] || md > h.to[0] * 100 + h.to[1]) return null;
+    return startOfDay(new Date(d.getFullYear() + 1, h.by[0] - 1, h.by[1]).getTime());
+  }
+
+  // The last day you can still take it back: the later of the normal window
+  // (day you got it plus the days you have) and any holiday deadline. Returns a
+  // midnight stamp, or null if there's no window at all.
   function lastDay(item) {
     var days = effectiveDays(item);
-    if (days == null || item.boughtAt == null) return null;
-    return startOfDay(item.boughtAt) + days * DAY;
+    var normal = (days != null && item.boughtAt != null) ? startOfDay(item.boughtAt) + days * DAY : null;
+    var hol = holidayDeadline(item);
+    if (normal == null) return hol;
+    if (hol == null) return normal;
+    return Math.max(normal, hol);
+  }
+
+  // True when the holiday deadline is what's giving you the extra time, i.e. it
+  // lands later than the shop's ordinary window. Used to show a holiday note.
+  function holidayWins(item) {
+    var hol = holidayDeadline(item);
+    if (hol == null) return false;
+    var days = effectiveDays(item);
+    var normal = (days != null && item.boughtAt != null) ? startOfDay(item.boughtAt) + days * DAY : null;
+    return normal == null || hol > normal;
   }
 
   // Whole days from today until the last day. 0 means today is the last day,
@@ -155,10 +194,13 @@
     DAY: DAY,
     presets: PRESETS,
     rights: RIGHTS,
+    holiday: HOLIDAY,
     startOfDay: startOfDay,
     rightsFloor: rightsFloor,
     effectiveDays: effectiveDays,
     rightsWin: rightsWin,
+    holidayDeadline: holidayDeadline,
+    holidayWins: holidayWins,
     lastDay: lastDay,
     daysLeft: daysLeft,
     bucket: bucket,
