@@ -19,6 +19,8 @@ Recoup fixes the "when is the last day?" part: type what you bought and when, pi
   - **UK, faulty:** 30-day short-term right to reject for a full refund (Consumer Rights Act 2015, s.22).
   - **UK and EU, bought online:** at least 14 days to change your mind (Consumer Contracts Regulations 2013; EU Consumer Rights Directive 2011/83/EU).
   - **US:** no federal right, so it follows the shop's policy.
+- **Flags what can't go back.** Mark a clearance or "final sale" item and Recoup shows it as non-returnable instead of counting down a window it doesn't have, so it never sits on the list pretending you can still take it back.
+- **Shows the real refund.** Many shops keep a restocking fee on returns (commonly 10-15% on opened electronics and large items). Type what you paid and the fee, and Recoup shows what you'd actually get back, not the sticker price.
 - **Adds to your calendar.** One tap downloads an `.ics` with the last day and a reminder the day before.
 - **Stays on your device.** The list lives in your browser. Nothing is uploaded.
 - **Fetch**, a dog who keeps an eye on the dates, points out what's closing soon, and gives a tip when you tap him.
