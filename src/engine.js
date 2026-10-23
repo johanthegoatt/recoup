@@ -67,6 +67,38 @@
     return isFinite(n) && n >= 0 ? n : null;
   }
 
+  // A money or percent value: allows decimals, unlike the whole-day num above.
+  function numMoney(x) {
+    if (x == null || x === "") return null;
+    var n = typeof x === "number" ? x : parseFloat(String(x).replace(/[^0-9.]/g, ""));
+    return isFinite(n) && n >= 0 ? n : null;
+  }
+  function round2(n) { return Math.round(n * 100) / 100; }
+
+  // Some things just can't go back: clearance, "final sale", opened software,
+  // pierced jewellery, underwear, perishables. When an item is marked final
+  // sale there's no window to count, so it's flagged rather than given a date.
+  function isReturnable(item) { return !(item && item.finalSale); }
+
+  // Many shops keep a slice of the refund as a restocking fee (commonly 10-15%
+  // on opened electronics and large items). Given the price and either a
+  // percent or a flat fee, this works out what's kept and what actually comes
+  // back, so the refund you see is the real one, not the sticker price.
+  function restockingFee(item) {
+    if (!item) return null;
+    var price = numMoney(item.price);
+    var pct = numMoney(item.restockPct);
+    var flat = numMoney(item.restockFee);
+    if (pct == null && flat == null) return null;
+    if (price == null) {
+      // No price given: still report the rate so it isn't a surprise.
+      return { pct: pct, amount: flat != null ? round2(flat) : null, refund: null };
+    }
+    var amount = pct != null ? price * pct / 100 : flat;
+    amount = Math.min(amount, price); // never keep more than was paid
+    return { pct: pct, amount: round2(amount), refund: round2(price - amount) };
+  }
+
   function region(item) {
     var r = item && item.region;
     return RIGHTS[r] ? r : "US";
@@ -141,13 +173,16 @@
   // Whole days from today until the last day. 0 means today is the last day,
   // negative means the window has already closed.
   function daysLeft(item, now) {
+    // Final-sale items have no window, so there's nothing to count down.
+    if (!isReturnable(item)) return null;
     var by = lastDay(item);
     if (by == null) return null;
     return Math.round((by - startOfDay(now == null ? Date.now() : now)) / DAY);
   }
 
-  // Four buckets the list is grouped and coloured by.
+  // Buckets the list is grouped and coloured by.
   function bucket(item, now) {
+    if (!isReturnable(item)) return "final";
     var d = daysLeft(item, now);
     if (d == null) return "unknown";
     if (d < 0) return "closed";
@@ -171,17 +206,19 @@
   // A short count for the mascot and the summary line: how many are still open
   // but close (within six days), and how many windows have already closed.
   function summary(items, now) {
-    var soon = 0, closed = 0;
+    var soon = 0, closed = 0, final = 0;
     items.forEach(function (it) {
       var b = bucket(it, now);
       if (b === "closed") closed++;
+      else if (b === "final") final++;
       else if (b === "now" || b === "soon") soon++;
     });
-    return { total: items.length, soon: soon, closed: closed };
+    return { total: items.length, soon: soon, closed: closed, final: final };
   }
 
   // Plain words for "how long left", for the page and screen readers.
   function phrase(item, now) {
+    if (!isReturnable(item)) return "Final sale, can't be returned";
     var d = daysLeft(item, now);
     if (d == null) return "No return date yet";
     if (d < 0) return d === -1 ? "Closed yesterday" : "Closed " + (-d) + " days ago";
@@ -206,6 +243,8 @@
     bucket: bucket,
     rank: rank,
     summary: summary,
-    phrase: phrase
+    phrase: phrase,
+    isReturnable: isReturnable,
+    restockingFee: restockingFee
   };
 });
