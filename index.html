@@ -69,6 +69,21 @@
         <span>Bought online or by phone</span>
       </label>
 
+      <div class="field" id="price-wrap">
+        <span>What you paid <span class="opt">(optional, for the refund)</span></span>
+        <input id="price" type="text" inputmode="decimal" maxlength="12" placeholder="e.g. 120">
+      </div>
+
+      <div class="field" id="restock-wrap">
+        <span>Restocking fee <span class="opt">(% kept on return, if any)</span></span>
+        <input id="restock" type="number" min="0" max="100" inputmode="numeric" placeholder="e.g. 15">
+      </div>
+
+      <label class="check" id="final-wrap">
+        <input id="final" type="checkbox">
+        <span>Final sale / clearance (can't be returned)</span>
+      </label>
+
       <label class="field" id="holiday-wrap">
         <span>Holiday-season buy at a big shop?</span>
         <select id="holiday">

@@ -14,6 +14,9 @@
   var windowEl = document.getElementById("window");
   var onlineEl = document.getElementById("online");
   var holidayEl = document.getElementById("holiday");
+  var priceEl = document.getElementById("price");
+  var restockEl = document.getElementById("restock");
+  var finalEl = document.getElementById("final");
   var chipsEl = document.getElementById("chips");
   var keepsEl = document.getElementById("keeps");
   var exampleBtn = document.getElementById("example");
@@ -77,7 +80,10 @@
       kind: kind(),
       windowDays: windowDays(),
       online: !!onlineEl.checked,
-      holiday: holidayEl && holidayEl.value ? holidayEl.value : null
+      holiday: holidayEl && holidayEl.value ? holidayEl.value : null,
+      price: priceEl ? priceEl.value.trim() : "",
+      restockPct: restockEl ? restockEl.value.trim() : "",
+      finalSale: finalEl ? !!finalEl.checked : false
     };
   }
 
@@ -120,13 +126,22 @@
   // the law is what gives you the deadline rather than the shop.
   function preview() {
     var it = draft();
-    if (it.boughtAt == null) { keepsEl.textContent = ""; return; }
+    if (it.boughtAt == null && !it.finalSale) { keepsEl.textContent = ""; return; }
+    if (!R.isReturnable(it)) {
+      keepsEl.innerHTML = "Final sale, so there's no window to count. Keeping it on the list is just a reminder you can't take it back.";
+      return;
+    }
     var by = R.lastDay(it);
     if (by == null) {
       keepsEl.innerHTML = "Pick how long the shop gives you, or your legal right will set it.";
       return;
     }
     var txt = "Last day to take it back: <strong>" + fmtDate(by) + "</strong> (" + R.phrase(it) + ").";
+    var fee = R.restockingFee(it);
+    if (fee && fee.refund != null) {
+      txt += ' <span class="right">A ' + (fee.pct != null ? fee.pct + "% restocking fee" : "restocking fee") +
+        " keeps " + money(fee.amount) + ", so you'd get back about " + money(fee.refund) + ".</span>";
+    }
     if (R.holidayWins(it)) {
       var note = R.holiday[it.holiday] && R.holiday[it.holiday].note;
       txt += ' <span class="right">' + R.holiday[it.holiday].label + "'s holiday window gives you until then." + (note ? " " + note : "") + "</span>";
@@ -173,6 +188,7 @@
     if (s.total) bits.push(s.total + (s.total === 1 ? " item" : " items"));
     if (s.soon) bits.push(s.soon + " closing soon");
     if (s.closed) bits.push(s.closed + " closed");
+    if (s.final) bits.push(s.final + " final sale");
     countEl.textContent = bits.join(" · ");
 
     var anyClosed = items.some(function (it) { return R.bucket(it) === "closed"; });
@@ -236,13 +252,20 @@
     return li;
   }
 
+  function money(n) {
+    try { return n.toLocaleString(undefined, { maximumFractionDigits: 2 }); }
+    catch (e) { return String(n); }
+  }
   function subLine(it) {
     var parts = [];
     if (it.shop) parts.push(it.shop);
-    parts.push(it.kind === "faulty" ? "faulty" : "change of mind");
+    if (it.finalSale) parts.push("final sale");
+    else parts.push(it.kind === "faulty" ? "faulty" : "change of mind");
     if (it.boughtAt != null) parts.push("bought " + fmtShort(it.boughtAt));
-    if (R.holidayWins(it)) parts.push("holiday window");
-    else if (R.rightsWin(it)) parts.push("legal right");
+    if (!it.finalSale && R.holidayWins(it)) parts.push("holiday window");
+    else if (!it.finalSale && R.rightsWin(it)) parts.push("legal right");
+    var fee = R.restockingFee(it);
+    if (!it.finalSale && fee && fee.refund != null) parts.push("get back ~" + money(fee.refund) + " after " + (fee.pct != null ? fee.pct + "% fee" : "fee"));
     return parts.join(" · ");
   }
   function fmtShort(ms) {
@@ -336,7 +359,8 @@
     form.addEventListener(ev, function (e) {
       if (e.target === windowEl) syncChips();
       if (e.target === windowEl || e.target === dateEl || e.target === regionEl ||
-          e.target === onlineEl || e.target.name === "kind") preview();
+          e.target === onlineEl || e.target === priceEl || e.target === restockEl ||
+          e.target === finalEl || e.target.name === "kind") preview();
     });
   });
 

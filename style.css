@@ -123,17 +123,20 @@ button {
 .item.b-open { border-left-color: var(--open); background: var(--open-bg); }
 .item.b-closed { border-left-color: var(--closed); background: var(--closed-bg); }
 .item.b-unknown { border-left-color: var(--line); }
+.item.b-final { border-left-color: var(--soft); background: var(--closed-bg); opacity: 0.85; }
 .item.leaving { opacity: 0; transform: translateX(16px); transition: .28s ease; }
 
 .i-main { flex: 1 1 auto; min-width: 0; }
 .i-name { font-weight: 600; }
 .i-sub { font-size: 13px; color: var(--soft); }
+.opt { font-weight: 400; color: var(--soft); font-size: 0.9em; }
 .i-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
 .i-left { font-weight: 700; font-size: 14px; white-space: nowrap; }
 .i-now .i-left { color: var(--now); }
 .i-soon .i-left { color: var(--soon); }
 .i-open .i-left { color: var(--open); }
 .i-closed .i-left { color: var(--closed); }
+.i-final .i-left { color: var(--soft); }
 .i-acts { display: flex; gap: 4px; align-items: center; }
 .i-cal {
   background: transparent; border: 1px solid var(--line); color: var(--ind-ink);
