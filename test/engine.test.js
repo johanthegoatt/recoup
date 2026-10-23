@@ -147,3 +147,45 @@ test("Best Buy's shorter holiday deadline is honoured", function () {
   assert.strictEqual(d.getDate(), 15);
   assert.strictEqual(d.getMonth(), 0);
 });
+
+test("a final-sale item is flagged, not given a countdown", function () {
+  var it = { finalSale: true, windowDays: 30, boughtAt: Date.now() };
+  assert.strictEqual(R.isReturnable(it), false);
+  assert.strictEqual(R.bucket(it), "final");
+  assert.strictEqual(R.daysLeft(it), null);
+  assert.strictEqual(R.phrase(it), "Final sale, can't be returned");
+});
+
+test("summary counts final-sale items on their own", function () {
+  var now = Date.now();
+  var items = [
+    { finalSale: true },
+    { windowDays: 30, boughtAt: now },
+    { windowDays: 1, boughtAt: now - 5 * R.DAY } // closed
+  ];
+  var s = R.summary(items, now);
+  assert.strictEqual(s.final, 1);
+  assert.strictEqual(s.closed, 1);
+});
+
+test("a percent restocking fee comes off the refund", function () {
+  var f = R.restockingFee({ price: "200", restockPct: "15" });
+  assert.strictEqual(f.amount, 30);
+  assert.strictEqual(f.refund, 170);
+});
+
+test("a flat restocking fee comes off the refund", function () {
+  var f = R.restockingFee({ price: "80", restockFee: "20" });
+  assert.strictEqual(f.amount, 20);
+  assert.strictEqual(f.refund, 60);
+});
+
+test("a restocking fee never keeps more than was paid", function () {
+  var f = R.restockingFee({ price: "50", restockFee: "90" });
+  assert.strictEqual(f.amount, 50);
+  assert.strictEqual(f.refund, 0);
+});
+
+test("no restocking fields means no fee", function () {
+  assert.strictEqual(R.restockingFee({ price: "40" }), null);
+});
