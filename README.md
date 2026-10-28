@@ -27,7 +27,9 @@ Recoup fixes the "when is the last day?" part: type what you bought and when, pi
 
 ## How the dates are worked out
 
-Everything is counted in whole days from the day you got the item, so the time of day never changes the answer. The deadline is the purchase day plus the number of days you have, which is the longer of the shop's window and any legal right for your region and reason (faulty vs change of mind, in store vs online).
+Everything is counted in whole days, so the time of day never changes the answer. The deadline is the start of the window plus the number of days you have, which is the longer of the shop's window and any legal right for your region and reason (faulty vs change of mind, in store vs online).
+
+For an **online or distance order the window runs from the day the goods arrive**, not the day you ordered, so a parcel that took a week to turn up still gives you the full window from delivery. Tick "bought online" and add the delivery date, and Recoup counts from there. This follows the UK Consumer Contracts Regulations 2013 reg.30, where the cancellation period ends 14 days after the day the goods come into your possession, and the EU Consumer Rights Directive art.9, which is the same. In a shop, the clock runs from the day you bought it.
 
 The quick-pick windows (14, 28, 30, 60, 90 days) are typical shop policies, not the law. Use the exact number from your own receipt when you have it. Recoup is a guide, not legal advice.
 

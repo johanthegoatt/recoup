@@ -69,6 +69,11 @@
         <span>Bought online or by phone</span>
       </label>
 
+      <div class="field" id="delivered-wrap" hidden>
+        <span>Day it arrived <span class="opt">(online orders: the clock starts from delivery, not the order day)</span></span>
+        <input id="delivered" type="date">
+      </div>
+
       <div class="field" id="price-wrap">
         <span>What you paid <span class="opt">(optional, for the refund)</span></span>
         <input id="price" type="text" inputmode="decimal" maxlength="12" placeholder="e.g. 120">
@@ -129,7 +134,7 @@
     <p>On top of any shop policy, the law gives you return rights that a short window can't take away:</p>
     <ul>
       <li><strong>UK, faulty:</strong> the Consumer Rights Act 2015 gives a 30-day short-term right to reject a faulty item for a full refund.</li>
-      <li><strong>UK and EU, bought online:</strong> you get at least 14 days to change your mind and cancel most online or distance orders, under the Consumer Contracts Regulations 2013 (UK) and the Consumer Rights Directive (EU).</li>
+      <li><strong>UK and EU, bought online:</strong> you get at least 14 days to change your mind and cancel most online or distance orders, under the Consumer Contracts Regulations 2013 (UK) and the Consumer Rights Directive (EU). That window runs from the day the goods arrive, not the day you ordered, so add the delivery date and I'll count from there.</li>
       <li><strong>US:</strong> there's no federal right to return, so change-of-mind and faulty returns follow the shop's own policy.</li>
     </ul>
     <p>Recoup uses the longer of the shop's window and your legal right. It's a guide, not legal advice. Nothing you type leaves your device.</p>

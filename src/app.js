@@ -13,6 +13,8 @@
   var regionEl = document.getElementById("region");
   var windowEl = document.getElementById("window");
   var onlineEl = document.getElementById("online");
+  var deliveredEl = document.getElementById("delivered");
+  var deliveredWrap = document.getElementById("delivered-wrap");
   var holidayEl = document.getElementById("holiday");
   var priceEl = document.getElementById("price");
   var restockEl = document.getElementById("restock");
@@ -80,6 +82,7 @@
       kind: kind(),
       windowDays: windowDays(),
       online: !!onlineEl.checked,
+      deliveredAt: deliveredEl && deliveredEl.value ? parseDate(deliveredEl.value) : null,
       holiday: holidayEl && holidayEl.value ? holidayEl.value : null,
       price: priceEl ? priceEl.value.trim() : "",
       restockPct: restockEl ? restockEl.value.trim() : "",
@@ -261,7 +264,8 @@
     if (it.shop) parts.push(it.shop);
     if (it.finalSale) parts.push("final sale");
     else parts.push(it.kind === "faulty" ? "faulty" : "change of mind");
-    if (it.boughtAt != null) parts.push("bought " + fmtShort(it.boughtAt));
+    if (R.deliveryAnchored(it)) parts.push("from delivery " + fmtShort(it.deliveredAt));
+    else if (it.boughtAt != null) parts.push("bought " + fmtShort(it.boughtAt));
     if (!it.finalSale && R.holidayWins(it)) parts.push("holiday window");
     else if (!it.finalSale && R.rightsWin(it)) parts.push("legal right");
     var fee = R.restockingFee(it);
@@ -358,9 +362,14 @@
   ["input", "change"].forEach(function (ev) {
     form.addEventListener(ev, function (e) {
       if (e.target === windowEl) syncChips();
+      // The delivery date only matters for an online order, so only show it then.
+      if (e.target === onlineEl && deliveredWrap) {
+        deliveredWrap.hidden = !onlineEl.checked;
+        if (!onlineEl.checked && deliveredEl) deliveredEl.value = "";
+      }
       if (e.target === windowEl || e.target === dateEl || e.target === regionEl ||
-          e.target === onlineEl || e.target === priceEl || e.target === restockEl ||
-          e.target === finalEl || e.target.name === "kind") preview();
+          e.target === onlineEl || e.target === deliveredEl || e.target === priceEl ||
+          e.target === restockEl || e.target === finalEl || e.target.name === "kind") preview();
     });
   });
 
