@@ -189,3 +189,38 @@ test("a restocking fee never keeps more than was paid", function () {
 test("no restocking fields means no fee", function () {
   assert.strictEqual(R.restockingFee({ price: "40" }), null);
 });
+
+test("an online window runs from the delivery day, not the order day", function () {
+  var DAY = R.DAY;
+  var bought = R.startOfDay(Date.now());
+  var delivered = R.startOfDay(Date.now() + 7 * DAY); // arrived a week later
+  var item = { boughtAt: bought, deliveredAt: delivered, online: true, windowDays: 30, kind: "change", region: "UK" };
+  assert.strictEqual(R.lastDay(item), delivered + 30 * DAY);
+  assert.strictEqual(R.deliveryAnchored(item), true);
+});
+
+test("the legal cooling-off floor is also counted from delivery", function () {
+  var DAY = R.DAY;
+  var bought = R.startOfDay(Date.now());
+  var delivered = R.startOfDay(Date.now() + 5 * DAY);
+  // No shop window given; UK online change-of-mind right is 14 days from receipt.
+  var item = { boughtAt: bought, deliveredAt: delivered, online: true, kind: "change", region: "UK" };
+  assert.strictEqual(R.lastDay(item), delivered + 14 * DAY);
+});
+
+test("an in-store purchase still counts from the day bought", function () {
+  var DAY = R.DAY;
+  var bought = R.startOfDay(Date.now());
+  var item = { boughtAt: bought, deliveredAt: R.startOfDay(Date.now() + 7 * DAY), online: false, windowDays: 30, kind: "change", region: "US" };
+  assert.strictEqual(R.windowStart(item), bought);
+  assert.strictEqual(R.lastDay(item), bought + 30 * DAY);
+  assert.strictEqual(R.deliveryAnchored(item), false);
+});
+
+test("an online order with no delivery date falls back to the order day", function () {
+  var DAY = R.DAY;
+  var bought = R.startOfDay(Date.now());
+  var item = { boughtAt: bought, online: true, windowDays: 28, kind: "change", region: "EU" };
+  assert.strictEqual(R.lastDay(item), bought + 28 * DAY);
+  assert.strictEqual(R.deliveryAnchored(item), false);
+});
