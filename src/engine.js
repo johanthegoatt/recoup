@@ -99,6 +99,29 @@
     return { pct: pct, amount: round2(amount), refund: round2(price - amount) };
   }
 
+  // The day the return clock runs from. For an online or distance order the
+  // window (and the legal cooling-off right) starts the day the goods are
+  // received, not the day you ordered, so a parcel that took a week to arrive
+  // still gives you the full window from delivery. UK Consumer Contracts
+  // Regulations 2013 reg.30: the cancellation period ends 14 days after the day
+  // the goods come into the consumer's possession; the EU Consumer Rights
+  // Directive art.9 is the same. In a shop, the clock runs from the day bought.
+  function windowStart(item) {
+    if (item && item.online && item.deliveredAt != null) {
+      var d = startOfDay(item.deliveredAt);
+      if (isFinite(d)) return d;
+    }
+    return item && item.boughtAt != null ? startOfDay(item.boughtAt) : null;
+  }
+
+  // True when a delivery date is what the window is counted from, i.e. an
+  // online order whose delivery day is later than its order day. Used to show
+  // a "counted from delivery" note so the extra days aren't a surprise.
+  function deliveryAnchored(item) {
+    if (!item || !item.online || item.deliveredAt == null || item.boughtAt == null) return false;
+    return startOfDay(item.deliveredAt) > startOfDay(item.boughtAt);
+  }
+
   function region(item) {
     var r = item && item.region;
     return RIGHTS[r] ? r : "US";
@@ -153,7 +176,8 @@
   // midnight stamp, or null if there's no window at all.
   function lastDay(item) {
     var days = effectiveDays(item);
-    var normal = (days != null && item.boughtAt != null) ? startOfDay(item.boughtAt) + days * DAY : null;
+    var start = windowStart(item);
+    var normal = (days != null && start != null) ? start + days * DAY : null;
     var hol = holidayDeadline(item);
     if (normal == null) return hol;
     if (hol == null) return normal;
@@ -166,7 +190,8 @@
     var hol = holidayDeadline(item);
     if (hol == null) return false;
     var days = effectiveDays(item);
-    var normal = (days != null && item.boughtAt != null) ? startOfDay(item.boughtAt) + days * DAY : null;
+    var start = windowStart(item);
+    var normal = (days != null && start != null) ? start + days * DAY : null;
     return normal == null || hol > normal;
   }
 
@@ -233,6 +258,8 @@
     rights: RIGHTS,
     holiday: HOLIDAY,
     startOfDay: startOfDay,
+    windowStart: windowStart,
+    deliveryAnchored: deliveryAnchored,
     rightsFloor: rightsFloor,
     effectiveDays: effectiveDays,
     rightsWin: rightsWin,
