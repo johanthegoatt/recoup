@@ -224,3 +224,27 @@ test("an online order with no delivery date falls back to the order day", functi
   assert.strictEqual(R.lastDay(item), bought + 28 * DAY);
   assert.strictEqual(R.deliveryAnchored(item), false);
 });
+
+test("a faulty return waives the restocking fee and refunds in full", function () {
+  // The shop lists a 15% fee, but a faulty item gets the whole price back.
+  var f = R.restockingFee({ price: "200", restockPct: "15", kind: "faulty" });
+  assert.strictEqual(f.waived, true);
+  assert.strictEqual(f.amount, 0);
+  assert.strictEqual(f.refund, 200);
+  assert.strictEqual(f.pct, 15); // still reported, so you see what's waived
+
+  // A flat fee is waived too, and with no price it still flags the waiver.
+  var g = R.restockingFee({ price: "80", restockFee: "20", kind: "faulty" });
+  assert.strictEqual(g.waived, true);
+  assert.strictEqual(g.refund, 80);
+  var h = R.restockingFee({ restockPct: "10", kind: "faulty" });
+  assert.strictEqual(h.waived, true);
+  assert.strictEqual(h.refund, null);
+});
+
+test("a change-of-mind return still has the restocking fee taken off", function () {
+  var f = R.restockingFee({ price: "200", restockPct: "15", kind: "change" });
+  assert.ok(!f.waived);
+  assert.strictEqual(f.amount, 30);
+  assert.strictEqual(f.refund, 170);
+});
