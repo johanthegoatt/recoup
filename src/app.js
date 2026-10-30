@@ -141,7 +141,11 @@
     }
     var txt = "Last day to take it back: <strong>" + fmtDate(by) + "</strong> (" + R.phrase(it) + ").";
     var fee = R.restockingFee(it);
-    if (fee && fee.refund != null) {
+    if (fee && fee.waived) {
+      txt += ' <span class="right">The ' + (fee.pct != null ? fee.pct + "% restocking fee" : "restocking fee") +
+        " doesn't apply to a faulty item" + (fee.refund != null ? ", so you get the full " + money(fee.refund) + " back" : "") +
+        " — a faulty return is a full refund by law.</span>";
+    } else if (fee && fee.refund != null) {
       txt += ' <span class="right">A ' + (fee.pct != null ? fee.pct + "% restocking fee" : "restocking fee") +
         " keeps " + money(fee.amount) + ", so you'd get back about " + money(fee.refund) + ".</span>";
     }
