@@ -90,6 +90,14 @@
     var pct = numMoney(item.restockPct);
     var flat = numMoney(item.restockFee);
     if (pct == null && flat == null) return null;
+    // A faulty item is entitled to a full refund with no restocking fee taken
+    // off (UK Consumer Rights Act 2015 s.20; the near-universal US and EU
+    // practice too). So a fee the shop would otherwise charge is waived, and
+    // the rate is still reported so you can see what you're not being charged.
+    if (item.kind === "faulty") {
+      return { pct: pct, flat: flat != null ? round2(flat) : null, amount: 0,
+        refund: price == null ? null : round2(price), waived: true };
+    }
     if (price == null) {
       // No price given: still report the rate so it isn't a surprise.
       return { pct: pct, amount: flat != null ? round2(flat) : null, refund: null };
