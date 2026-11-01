@@ -21,6 +21,7 @@ Recoup fixes the "when is the last day?" part: type what you bought and when, pi
   - **US:** no federal right, so it follows the shop's policy.
 - **Flags what can't go back.** Mark a clearance or "final sale" item and Recoup shows it as non-returnable instead of counting down a window it doesn't have, so it never sits on the list pretending you can still take it back.
 - **Shows the real refund.** Many shops keep a restocking fee on returns (commonly 10-15% on opened electronics and large items). Type what you paid and the fee, and Recoup shows what you'd actually get back, not the sticker price.
+- **Catches a price drop.** Lots of shops refund the difference if something you bought drops in price soon after (a *price adjustment*, separate from returning it, so you keep the item). Type the price you paid, the price now and the shop's adjustment window, and Recoup says whether you're still in time and roughly how much to claim back. Common windows are 7 days (Walmart), 14 (Express, Gap, Old Navy) and up to 30 (Backcountry); the clock runs from the purchase day.
 - **Adds to your calendar.** One tap downloads an `.ics` with the last day and a reminder the day before.
 - **Stays on your device.** The list lives in your browser. Nothing is uploaded.
 - **Fetch**, a dog who keeps an eye on the dates, points out what's closing soon, and gives a tip when you tap him.
