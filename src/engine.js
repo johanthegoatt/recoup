@@ -107,6 +107,41 @@
     return { pct: pct, amount: round2(amount), refund: round2(price - amount) };
   }
 
+  // Price adjustment (price protection). Lots of shops refund the difference if
+  // something you bought drops in price soon after, a separate thing from
+  // returning it: you keep the item and get money back. Common windows are 7
+  // days (Walmart), 14 days (Express, Gap, Old Navy) and up to 30 (Backcountry),
+  // and the clock runs from the purchase day, not delivery. Given the price you
+  // paid, the price now and the shop's adjustment window, this says whether
+  // you're still in time and what you'd get back. Price-adjustment windows run
+  // separately from the return window, so a closed return can still be in time
+  // for a price drop. Returns null when there isn't enough to work it out.
+  function priceAdjustment(item, now) {
+    if (!item) return null;
+    var days = num(item.priceAdjustDays);
+    var paid = numMoney(item.price);
+    var nowPrice = numMoney(item.nowPrice);
+    if (days == null || paid == null || nowPrice == null || item.boughtAt == null) return null;
+    var start = startOfDay(item.boughtAt);
+    var by = start + days * DAY;
+    var left = Math.round((by - startOfDay(now == null ? Date.now() : now)) / DAY);
+    var drop = paid - nowPrice;
+    var inTime = left >= 0;
+    var dropped = drop > 0;
+    return {
+      paid: round2(paid),
+      now: round2(nowPrice),
+      drop: round2(Math.max(0, drop)),
+      days: days,
+      lastDay: by,
+      daysLeft: left,
+      inTime: inTime,
+      eligible: dropped && inTime,
+      reason: !dropped ? "no-drop" : !inTime ? "expired" : "ok",
+      saving: dropped && inTime ? round2(drop) : 0
+    };
+  }
+
   // The day the return clock runs from. For an online or distance order the
   // window (and the legal cooling-off right) starts the day the goods are
   // received, not the day you ordered, so a parcel that took a week to arrive
@@ -280,6 +315,7 @@
     summary: summary,
     phrase: phrase,
     isReturnable: isReturnable,
-    restockingFee: restockingFee
+    restockingFee: restockingFee,
+    priceAdjustment: priceAdjustment
   };
 });
