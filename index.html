@@ -84,6 +84,16 @@
         <input id="restock" type="number" min="0" max="100" inputmode="numeric" placeholder="e.g. 15">
       </div>
 
+      <div class="field" id="nowprice-wrap">
+        <span>Price now <span class="opt">(optional, if it's dropped since)</span></span>
+        <input id="now-price" type="text" inputmode="decimal" maxlength="12" placeholder="e.g. 95">
+      </div>
+
+      <div class="field" id="padjust-wrap">
+        <span>Price-adjustment window <span class="opt">(days the shop refunds a drop)</span></span>
+        <input id="padjust" type="number" min="0" max="120" inputmode="numeric" placeholder="e.g. 14">
+      </div>
+
       <label class="check" id="final-wrap">
         <input id="final" type="checkbox">
         <span>Final sale / clearance (can't be returned)</span>

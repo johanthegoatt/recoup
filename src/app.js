@@ -18,6 +18,8 @@
   var holidayEl = document.getElementById("holiday");
   var priceEl = document.getElementById("price");
   var restockEl = document.getElementById("restock");
+  var nowPriceEl = document.getElementById("now-price");
+  var padjustEl = document.getElementById("padjust");
   var finalEl = document.getElementById("final");
   var chipsEl = document.getElementById("chips");
   var keepsEl = document.getElementById("keeps");
@@ -86,6 +88,8 @@
       holiday: holidayEl && holidayEl.value ? holidayEl.value : null,
       price: priceEl ? priceEl.value.trim() : "",
       restockPct: restockEl ? restockEl.value.trim() : "",
+      nowPrice: nowPriceEl ? nowPriceEl.value.trim() : "",
+      priceAdjustDays: padjustEl ? padjustEl.value.trim() : "",
       finalSale: finalEl ? !!finalEl.checked : false
     };
   }
@@ -274,6 +278,9 @@
     else if (!it.finalSale && R.rightsWin(it)) parts.push("legal right");
     var fee = R.restockingFee(it);
     if (!it.finalSale && fee && fee.refund != null) parts.push("get back ~" + money(fee.refund) + " after " + (fee.pct != null ? fee.pct + "% fee" : "fee"));
+    var pa = R.priceAdjustment(it);
+    if (pa && pa.eligible) parts.push("price dropped: claim ~" + money(pa.saving) + " back (" + pa.daysLeft + "d left)");
+    else if (pa && pa.reason === "expired" && pa.drop > 0) parts.push("price-adjustment window closed");
     return parts.join(" · ");
   }
   function fmtShort(ms) {
@@ -373,7 +380,8 @@
       }
       if (e.target === windowEl || e.target === dateEl || e.target === regionEl ||
           e.target === onlineEl || e.target === deliveredEl || e.target === priceEl ||
-          e.target === restockEl || e.target === finalEl || e.target.name === "kind") preview();
+          e.target === restockEl || e.target === nowPriceEl || e.target === padjustEl ||
+          e.target === finalEl || e.target.name === "kind") preview();
     });
   });
 
