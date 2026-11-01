@@ -248,3 +248,43 @@ test("a change-of-mind return still has the restocking fee taken off", function 
   assert.strictEqual(f.amount, 30);
   assert.strictEqual(f.refund, 170);
 });
+
+// ---- price adjustment (price protection) ----
+
+test("price adjustment refunds the drop when still in time", function () {
+  var item = { price: 100, nowPrice: 80, priceAdjustDays: 14, boughtAt: daysAgo(5) };
+  var pa = R.priceAdjustment(item, NOW);
+  assert.strictEqual(pa.eligible, true);
+  assert.strictEqual(pa.drop, 20);
+  assert.strictEqual(pa.saving, 20);
+  assert.strictEqual(pa.daysLeft, 9); // 14 - 5
+  assert.strictEqual(pa.reason, "ok");
+});
+
+test("price adjustment is expired past the window", function () {
+  var item = { price: 100, nowPrice: 80, priceAdjustDays: 7, boughtAt: daysAgo(10) };
+  var pa = R.priceAdjustment(item, NOW);
+  assert.strictEqual(pa.eligible, false);
+  assert.strictEqual(pa.inTime, false);
+  assert.strictEqual(pa.reason, "expired");
+  assert.strictEqual(pa.saving, 0);
+});
+
+test("price adjustment needs an actual drop", function () {
+  var item = { price: 100, nowPrice: 100, priceAdjustDays: 14, boughtAt: daysAgo(2) };
+  var pa = R.priceAdjustment(item, NOW);
+  assert.strictEqual(pa.eligible, false);
+  assert.strictEqual(pa.reason, "no-drop");
+  assert.strictEqual(pa.drop, 0);
+});
+
+test("price adjustment runs from the purchase day, not delivery", function () {
+  // online, delivered late: the adjustment clock still starts at the buy date
+  var item = { price: 50, nowPrice: 40, priceAdjustDays: 14, online: true, boughtAt: daysAgo(12), deliveredAt: daysAgo(5) };
+  var pa = R.priceAdjustment(item, NOW);
+  assert.strictEqual(pa.daysLeft, 2); // 14 - 12 from purchase, not 14 - 5
+});
+
+test("no price adjustment without a current price", function () {
+  assert.strictEqual(R.priceAdjustment({ price: 100, priceAdjustDays: 14, boughtAt: daysAgo(1) }, NOW), null);
+});
