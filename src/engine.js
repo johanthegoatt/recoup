@@ -295,10 +295,58 @@
     return d + " days left";
   }
 
+  // The statutory cooling-off cancellation for an online change-of-mind return
+  // (UK Consumer Contracts Regulations 2013; EU Consumer Rights Directive).
+  // Inside the cooling-off window the trader cannot charge a restocking or admin
+  // fee, and must refund the original STANDARD delivery charge (not a premium
+  // upgrade); you only pay to post it back. After you tell them you're
+  // cancelling, you then have a further 14 days to send the goods back
+  // (reg.35), so the outer send-back date is 14 days past the last cancel day.
+  // Returns null when the item isn't an online change-of-mind return in a region
+  // with a cooling-off right (so a faulty item or a US order is left to the
+  // other rules).
+  function coolingOff(item, now) {
+    if (!item || !item.online || item.kind === "faulty") return null;
+    var floor = (RIGHTS[region(item)] || {}).coolingOff || 0;
+    if (!floor) return null;
+    var start = windowStart(item);
+    if (start == null) return null;
+
+    var nowD = startOfDay(now == null ? Date.now() : now);
+    var cancelBy = start + floor * DAY;              // last day to cancel
+    var within = nowD <= cancelBy;
+    var daysToCancel = Math.round((cancelBy - nowD) / DAY);
+    var sendBackBy = cancelBy + floor * DAY;         // outer bound: cancel late, return within 14
+
+    var paidDelivery = numMoney(item.deliveryPaid);
+    var standard = numMoney(item.deliveryStandard);
+    var deliveryRefund = 0;
+    if (within && paidDelivery != null) {
+      deliveryRefund = standard != null ? Math.min(paidDelivery, standard) : paidDelivery;
+    }
+
+    var rf = restockingFee(item);
+    var shopFee = rf && rf.amount != null ? rf.amount : 0;
+    var feeUnlawful = within && shopFee > 0;         // can't be charged inside the window
+    var price = numMoney(item.price);
+    var goodsRefund = price == null ? null : (within ? price : (rf && rf.refund != null ? rf.refund : price));
+    var refund = goodsRefund == null ? null : round2(goodsRefund + deliveryRefund);
+
+    return {
+      region: region(item), floor: floor, within: within,
+      cancelBy: cancelBy, daysToCancel: daysToCancel, sendBackBy: sendBackBy,
+      deliveryRefund: round2(deliveryRefund), feeUnlawful: feeUnlawful,
+      shopFee: round2(shopFee),
+      goodsRefund: goodsRefund == null ? null : round2(goodsRefund),
+      refund: refund
+    };
+  }
+
   return {
     DAY: DAY,
     presets: PRESETS,
     rights: RIGHTS,
+    coolingOff: coolingOff,
     holiday: HOLIDAY,
     startOfDay: startOfDay,
     windowStart: windowStart,
