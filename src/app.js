@@ -145,13 +145,24 @@
     }
     var txt = "Last day to take it back: <strong>" + fmtDate(by) + "</strong> (" + R.phrase(it) + ").";
     var fee = R.restockingFee(it);
+    var co = R.coolingOff(it);
     if (fee && fee.waived) {
       txt += ' <span class="right">The ' + (fee.pct != null ? fee.pct + "% restocking fee" : "restocking fee") +
         " doesn't apply to a faulty item" + (fee.refund != null ? ", so you get the full " + money(fee.refund) + " back" : "") +
         " — a faulty return is a full refund by law.</span>";
+    } else if (co && co.within && co.feeUnlawful) {
+      txt += ' <span class="right">You\'re inside the 14-day online cooling-off period, so the ' +
+        (fee.pct != null ? fee.pct + "% restocking fee" : "restocking fee") +
+        " can't be charged (Consumer Contracts Regulations 2013)" +
+        (co.goodsRefund != null ? ", so you get the full " + money(co.goodsRefund) + " back" : "") +
+        (co.deliveryRefund > 0 ? " plus the " + money(co.deliveryRefund) + " standard delivery" : "") + ".</span>";
     } else if (fee && fee.refund != null) {
       txt += ' <span class="right">A ' + (fee.pct != null ? fee.pct + "% restocking fee" : "restocking fee") +
         " keeps " + money(fee.amount) + ", so you'd get back about " + money(fee.refund) + ".</span>";
+    }
+    if (co && co.within) {
+      txt += ' <span class="right">Once you tell them you\'re cancelling, you have 14 more days to post it back' +
+        (co.sendBackBy ? " (by " + fmtDate(co.sendBackBy) + " if you cancel on the last day)" : "") + ".</span>";
     }
     if (R.holidayWins(it)) {
       var note = R.holiday[it.holiday] && R.holiday[it.holiday].note;
