@@ -205,7 +205,7 @@ test("the legal cooling-off floor is also counted from delivery", function () {
   var delivered = R.startOfDay(Date.now() + 5 * DAY);
   // No shop window given; UK online change-of-mind right is 14 days from receipt.
   var item = { boughtAt: bought, deliveredAt: delivered, online: true, kind: "change", region: "UK" };
-  assert.strictEqual(R.lastDay(item), delivered + 14 * DAY);
+  assert.strictEqual(R.lastDay(item), delivered + 14 * CDAY);
 });
 
 test("an in-store purchase still counts from the day bought", function () {
@@ -287,4 +287,46 @@ test("price adjustment runs from the purchase day, not delivery", function () {
 
 test("no price adjustment without a current price", function () {
   assert.strictEqual(R.priceAdjustment({ price: 100, priceAdjustDays: 14, boughtAt: daysAgo(1) }, NOW), null);
+});
+
+// --- CCR 2013 / CRD cooling-off cancellation (change of mind, online) ---
+const CDAY = R.DAY;
+const day0 = Date.UTC(2026, 0, 10);           // delivered 10 Jan 2026
+const within = Date.UTC(2026, 0, 18);         // 8 days later, inside 14
+const after = Date.UTC(2026, 1, 1);           // well past 14 days
+
+test("cooling-off: inside the window a restocking fee is unlawful and standard delivery is refunded", () => {
+  const item = { online: true, kind: "change", region: "UK", price: 100, restockPct: 20,
+    deliveryPaid: 6, deliveryStandard: 4, deliveredAt: day0 };
+  const c = R.coolingOff(item, within);
+  assert.strictEqual(c.within, true);
+  assert.strictEqual(c.feeUnlawful, true);        // the 20% fee can't be charged
+  assert.strictEqual(c.deliveryRefund, 4);         // capped at the standard rate, not the 6 paid
+  assert.strictEqual(c.goodsRefund, 100);          // full price back
+  assert.strictEqual(c.refund, 104);               // price + standard delivery
+});
+
+test("cooling-off: past the window the shop's restocking fee applies and delivery isn't refunded", () => {
+  const item = { online: true, kind: "change", region: "UK", price: 100, restockPct: 20,
+    deliveryPaid: 6, deliveryStandard: 4, deliveredAt: day0 };
+  const c = R.coolingOff(item, after);
+  assert.strictEqual(c.within, false);
+  assert.strictEqual(c.feeUnlawful, false);
+  assert.strictEqual(c.deliveryRefund, 0);
+  assert.strictEqual(c.goodsRefund, 80);           // 20% kept once the statute lapses
+});
+
+test("cooling-off: the send-back date is 14 days past the last cancel day", () => {
+  const item = { online: true, kind: "change", region: "UK", deliveredAt: day0 };
+  const c = R.coolingOff(item, within);
+  assert.strictEqual(c.cancelBy, R.startOfDay(day0) + 14 * CDAY);
+  assert.strictEqual(c.sendBackBy, c.cancelBy + 14 * CDAY);
+});
+
+test("cooling-off: a US order has no statutory cooling-off, so it returns null", () => {
+  assert.strictEqual(R.coolingOff({ online: true, kind: "change", region: "US", deliveredAt: day0 }, within), null);
+});
+
+test("cooling-off: a faulty item is left to the right-to-reject rules (null here)", () => {
+  assert.strictEqual(R.coolingOff({ online: true, kind: "faulty", region: "UK", deliveredAt: day0 }, within), null);
 });
